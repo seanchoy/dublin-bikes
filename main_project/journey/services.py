@@ -4,7 +4,7 @@ from ..config import Config
 from ..weather.services import _fetch_nearest_weather
 from ..bike_forecast.models.forecast import _predict_hour
 
-GOOGLE_MAPS_API_KEY = Config.GOOGLE_MAPS_API_KEY
+GOOGLE_MAPS_API_KEY = Config.GOOGLE_MAPS_SERVER_KEY
 
 
 def geocode_address(address) -> tuple:

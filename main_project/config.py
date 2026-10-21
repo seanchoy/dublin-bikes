@@ -36,7 +36,8 @@ class Config:
         JCDECAUX_API_KEY: JCDecaux Bikes API credential.
         JCDECAUX_CONTRACT: JCDecaux contract name (always ``"dublin"``).
         JCDECAUX_BASE_URL: Base URL for the JCDecaux VLS v1 API.
-        GOOGLE_MAPS_API_KEY: Google Maps Platform credential (Geocoding + Directions).
+        GOOGLE_MAPS_API_KEY: Browser Google Maps key (Maps JavaScript + Places), sent to clients.
+        GOOGLE_MAPS_SERVER_KEY: Server-side key for Geocoding + Directions (falls back to the browser key).
         CURRENT_WEATHER_URI: OpenWeatherMap current-conditions endpoint URL.
         FORECAST_WEATHER_URI: OpenWeatherMap 3-hour forecast endpoint URL.
         STATIONS_URI: JCDecaux stations list endpoint URL.
@@ -62,6 +63,9 @@ class Config:
     JCDECAUX_BASE_URL = "https://api.jcdecaux.com/vls/v1"
     
     GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+    # Separate IP-restricted key for server-side Geocoding/Directions calls; the browser
+    # key above is referrer-restricted and would be rejected from the server.
+    GOOGLE_MAPS_SERVER_KEY = os.getenv("GOOGLE_MAPS_SERVER_KEY") or GOOGLE_MAPS_API_KEY
    
     CURRENT_WEATHER_URI: str = os.getenv(
         "CURRENT_WEATHER_URI", "https://api.openweathermap.org/data/2.5/weather"

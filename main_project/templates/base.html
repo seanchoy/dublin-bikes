@@ -132,14 +132,16 @@
       <span id="hdr-temp">--&deg;C</span>
     </div>
 
-    {# Auth buttons — swap between Sign Out / Log In + Sign Up
-       depending on whether the user is logged in (session check). #}
+    {# Auth buttons — hidden for the public deployment. To bring them back,
+       remove the comment markers around this block. They swap between
+       Sign Out / Log In + Sign Up depending on the session check.
     {% if session.get('user_id') %}
       <a href="{{ url_for('auth.logout') }}" class="btn-nav-outline">Sign Out</a>
     {% else %}
       <a href="{{ url_for('auth.login') }}"    class="btn-nav-outline">Log In</a>
       <a href="{{ url_for('auth.register') }}" class="btn-nav-solid">Sign Up</a>
     {% endif %}
+    #}
   </div>
 
 </header>

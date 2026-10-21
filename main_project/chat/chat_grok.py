@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 # GROQ SETTINGS 
 GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL    = "llama-3.3-70b-versatile"   # free, fast
+# llama-3.3-70b-versatile was retired by Groq; override with GROQ_MODEL if this one is too
+GROQ_MODEL    = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # BASE SYSTEM PROMPT 
 BASE_SYSTEM = (
@@ -91,7 +92,7 @@ def call_groq_with_retry(messages: list, api_key: str, max_retries: int = 3) -> 
     payload = {
         "model": GROQ_MODEL,
         "messages": messages,
-        "max_tokens": 400,
+        "max_tokens": 800,   # gpt-oss reasoning tokens count towards this limit
         "temperature": 0.7,
     }
 
