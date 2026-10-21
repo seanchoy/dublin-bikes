@@ -1,0 +1,17 @@
+# Instance name is the scraper script, e.g. dublin-bikes-scraper@jcdecaux
+[Unit]
+Description=Dublin Bikes scraper %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/srv/dublin-bikes
+EnvironmentFile=/srv/dublin-bikes/.env
+Environment=PYTHONPATH=/srv/dublin-bikes
+ExecStart=/srv/dublin-bikes/venv/bin/python sprint1_webscrappers/webscrapping_ec2/%i.py
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

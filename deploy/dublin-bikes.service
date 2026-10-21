@@ -1,0 +1,16 @@
+[Unit]
+Description=Dublin Bikes Flask app (gunicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/srv/dublin-bikes
+EnvironmentFile=/srv/dublin-bikes/.env
+# One worker: each worker loads ~2GB of forecast models, so scale with threads instead.
+ExecStart=/srv/dublin-bikes/venv/bin/gunicorn --workers 1 --threads 8 --timeout 180 --bind 127.0.0.1:8000 app:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
