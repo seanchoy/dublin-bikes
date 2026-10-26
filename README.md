@@ -108,8 +108,8 @@ Production runs on EC2 with the app in `/srv/dublin-bikes`:
 
 - [Figma mockup](https://www.figma.com/design/hTWVkDQys1NVg8Z7n2yyXK/Software-Engineering?node-id=0-1&p=f&t=4nAaHxQFGe30qwF2-0)
 - [Personas, interviews, PRD and backlog](https://drive.google.com/drive/folders/1maMOySvNugMCGIAmODOntPJsiAVLn2Hl?usp=sharing)
-- [Sphinx API docs](https://shayan-ashish-chakraborty.github.io/dublin-bikes-team20/)
+- [Sphinx API docs](https://shayan-chakraborty1664.github.io/dublin-bikes-team20/)
 
 ---
 
-<sub>Built as a Team 20 group project for the Software Engineering module at University College Dublin. Team: Jialin, Leah, Shayan, Shida. Original team repo: <a href="https://github.com/shayan-ashish-chakraborty/dublin-bikes-team20">shayan-ashish-chakraborty/dublin-bikes-team20</a>.</sub>
+<sub>Built as a Team 20 group project for the Software Engineering module at University College Dublin. Team: Jialin, Leah, Shayan, Shida. Original team repo: <a href="https://github.com/shayan-chakraborty1664/dublin-bikes-team20">shayan-chakraborty1664/dublin-bikes-team20</a>.</sub>
