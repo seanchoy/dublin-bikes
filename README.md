@@ -1,307 +1,115 @@
-#  Dublin Bikes 
- 
-A full-stack web application for real-time Dublin Bikes station data, journey planning, weather forecasting, and AI-powered assistance, deployed on AWS EC2.
- 
+# Dublin Bikes
+
+Real-time Dublin Bikes planner: live station availability on a map, weather, station-to-station journey planning, ML availability forecasts and an LLM chat assistant. Flask + MySQL, deployed on AWS (EC2 + RDS) behind nginx.
+
+**Live:** [bikes.seancai.dev](https://bikes.seancai.dev)
+
 ---
- 
-##  Quick Links
- 
-| Resource | Link |
-|---|---|
-|  Live Application | [https://18.201.183.91/](https://18.201.183.91/) |
-|  Figma Mockup | [Initial Project Mockup](https://www.figma.com/design/hTWVkDQys1NVg8Z7n2yyXK/Software-Engineering?node-id=0-1&p=f&t=4nAaHxQFGe30qwF2-0) |
-|  Project Documents | [User Personas, Interviews, PRD & Backlog](https://drive.google.com/drive/folders/1maMOySvNugMCGIAmODOntPJsiAVLn2Hl?usp=sharing) |
-|  Sphinx Documentation | [https://shayan-ashish-chakraborty.github.io/dublin-bikes-team20/](https://shayan-ashish-chakraborty.github.io/dublin-bikes-team20/) |
- 
----
- 
-##  Table of Contents
- 
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Environment Variables](#environment-variables)
-- [Setup & Installation](#setup--installation)
-- [Running the App](#running-the-app)
-- [Team Logs](#team-logs)
----
- 
-## Overview
- 
-Dublin Bikes is a software engineering group project that provides Dublin citizens and tourists with a unified platform to:
- 
-- View **live station availability** for all JCDecaux Dublin Bikes stations on an interactive map
-- Check **current weather** and a **5-day forecast** powered by OpenWeatherMap
-- Plan **journeys** from station to station with Google Maps routing
-- Get **AI-powered bike availability forecasts** using machine learning
-- Chat with an **AI assistant** (Gemini / Grok) for bike and city queries
----
- 
+
 ## Features
- 
--  **Live Station Map** — Real-time bike and stand availability across all Dublin stations
--  **Weather Integration** — Current conditions and 3-hour/5-day forecasts
--  **Journey Planner** — Route planning with pickup/drop-off station suggestions
--  **ML Forecasting** — Predicted station availability using trained scikit-learn models
--  **AI Chatbot** — Conversational assistant powered by Google Gemini and Grok
--  **User Authentication** — Register/login with session management (Flask-WTF + Werkzeug)
----
- 
-## Tech Stack
- 
+
+- **Live station map**: bikes and free stands for every JCDecaux Dublin station, refreshed from a scraper that writes to MySQL.
+- **Weather**: current conditions and 3-hour / 5-day forecast from OpenWeatherMap.
+- **Journey planner**: pick-up and drop-off station suggestions with Google Maps routing.
+- **Availability forecast**: two-stage scikit-learn pipeline (weather model → per-station bike model) predicting availability by hour.
+- **AI assistant**: chat about stations, routes and the city, backed by Groq (`openai/gpt-oss-120b`, configurable). A Gemini backend is also included.
+- **Accounts**: register/login with Flask-WTF + Werkzeug password hashing (hidden in the public deployment).
+
+## Tech stack
+
 | Layer | Technology |
 |---|---|
-| Backend | Python 3, Flask 3.1 |
-| Database | MySQL (via SQLAlchemy + PyMySQL) |
-| Frontend | HTML/CSS/JavaScript, Jinja2 templates |
-| Maps | Google Maps JavaScript API |
-| Bike Data | JCDecaux API |
-| Weather | OpenWeatherMap API |
+| Backend | Python 3.10+, Flask 3.1 (blueprints + app factory), SQLAlchemy, PyMySQL |
+| Frontend | Jinja2 templates, vanilla JavaScript, CSS, Google Maps JavaScript API |
+| Data | JCDecaux API, OpenWeatherMap API, MySQL 8 |
 | ML | scikit-learn, pandas, numpy |
-| AI Chat | Google Gemini API, Grok API |
-| Deployment | AWS EC2 |
-| Docs | Sphinx |
- 
----
- 
-## Project Structure
- 
+| LLM | Groq API, Google Gemini API |
+| Deployment | AWS EC2 + RDS, gunicorn, nginx, systemd, Let's Encrypt |
+| Docs / tests | Sphinx, unittest + coverage |
+
+## Architecture
+
 ```
-dublin-bikes-team20/
-│
-├── app.py                          # Application entry point (Flask factory + CORS)
-├── requirement.txt                 # Python dependencies
-├── environment_conda.yml           # Conda environment definition
-├── ec2_conect.txt                  # EC2 SSH connection notes
-│
-├── main_project/                   # Core application package
-│   ├── __init__.py                 # App factory (create_app)
-│   ├── config.py                   # Centralised config (reads var.env / .env)
-│   ├── db.py                       # SQLAlchemy database setup
-│   ├── var.env                     # Environment variables (see section below)
-│   │
-│   ├── auth/                       # User authentication blueprint
-│   │   ├── auth.py                 # Login, register, logout routes
-│   │   ├── create_auth_db.py       # Auth DB initialisation script
-│   │   └── __init__.py
-│   │
-│   ├── home/                       # Home page blueprint
-│   │   ├── home.py                 # Index route
-│   │   └── __init__.py
-│   │
-│   ├── station/                    # Bike station blueprint
-│   │   ├── routes.py               # Station map routes
-│   │   ├── services.py             # JCDecaux API service layer
-│   │   ├── bikes_original.py       # Original scraper/legacy helpers
-│   │   └── __init__.py
-│   │
-│   ├── weather/                    # Weather blueprint
-│   │   ├── routes.py               # Weather page routes
-│   │   ├── services.py             # OpenWeatherMap service layer
-│   │   └── __init__.py
-│   │
-│   ├── journey/                    # Journey planner blueprint
-│   │   ├── routes.py               # Journey planning routes
-│   │   ├── api.py                  # Journey API endpoints
-│   │   ├── services.py             # Route/station calculation logic
-│   │   └── __init__.py
-│   │
-│   ├── bike_forecast/              # ML availability forecast blueprint
-        ├── models/                 # All ML model stored
-│   │   ├── routes.py               # Forecast API routes
-│   │   └── __init__.py
-│   │
-│   ├── chat/                       # AI chatbot blueprint
-│   │   ├── chat_gemini.py          # Google Gemini integration
-│   │   ├── chat_grok.py            # Grok/Groq integration
-│   │   ├── var.env                 # Chat-specific env overrides
-│   │   └── __init__.py
-│   │
-│   ├── templates/                  # Jinja2 HTML templates
-│   │   ├── base.html               # Base layout with nav/footer
-│   │   ├── index.html              # Home / station map page
-│   │   ├── stations.html           # Station list view
-│   │   ├── weather.html            # Weather page
-│   │   ├── Journey.html            # Journey planner page
-│   │   ├── login.html              # Login form
-│   │   └── register.html           # Registration form
-│   │
-│   ├── static/
-│   │   ├── css/
-│   │   │   ├── style.css           # Global styles
-│   │   │   ├── stations.css        # Station map styles
-│   │   │   ├── journey.css         # Journey planner styles
-│   │   │   └── ml.css              # ML forecast styles
-│   │   ├── js/
-│   │   │   ├── main.js             # Shared JS utilities
-│   │   │   ├── stations.js         # Station map logic
-│   │   │   ├── journey.js          # Journey planner logic
-│   │   │   └── MLbikes.js          # ML forecast UI
-│   │   └── images/
-│   │       ├── loginbg.png
-│   │       └── icons/              # SVG icons (bike, weather, map, etc.)
-│   │
-│   ├── notebooks/                  # Data science & model training
-│   │   ├── bike_forecasting.ipynb  # Main forecasting notebook
-│   │   ├── sktime_forecasting.ipynb
-│   │   └── final_merged_data.csv   # Merged training dataset
-│   │
-│   └── bash_scripts/
-│       ├── create_db.sh            # DB creation helper script
-│       └── scrapper.sh             # Data scraping cron script
-│
-├── sprint1_webscrappers/           # Sprint 1 JCDecaux scraper prototypes
-│   └── jcdecaux_api/
-│       ├── create-db-jcdecaux.py
-│       ├── get-station.py
-│       ├── jc_decaux_extract_info_from_json.py
-│       ├── jc_decaux_local_download.py
-│       ├── jc_decaux_text_to_db_dynamic.py
-│       ├── jc_decaux_text_to_db_static.py
-│       └── python-basic-db.py
-│
-├── main_project/ec2/
-│   └── dublin-bike.pem             # EC2 SSH key (keep private — do not commit)
-│
-└── Logs/                           # Individual team member dev logs
-    ├── Jialin/
-    ├── Leah/
-    ├── Sean/
-    └── Shayan/
+JCDecaux / OpenWeatherMap ──► scrapers (systemd) ──► MySQL (RDS)
+                                                        │
+Browser ──HTTPS──► nginx ──► gunicorn ──► Flask app ────┤
+                                │                       └─► ML forecast models
+                                └─► Google Maps, Groq / Gemini APIs
 ```
- 
----
- 
-## Environment Variables
- 
-The application reads configuration from `main_project/var.env`. **Never commit real credentials to version control**.
- 
-```env
-#  DATABASE CONFIG 
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME_JCDECAUX=local_databasejcdecaux
-DB_NAME_WEATHER=local_databaseopenweather
- 
-#  EXTERNAL API KEYS 
-JCDECAUX_API_KEY=your_jcdecaux_api_key
-OPENWEATHER_API_KEY=your_openweather_api_key
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key
- 
-#  JCDECAUX ENDPOINTS 
-STATIONS_URI=https://api.jcdecaux.com/vls/v1/stations
- 
-#  OPENWEATHERMAP ENDPOINTS 
-CITY=Dublin
-LAT=53.3498
-LON=-6.2603
-CURRENT_WEATHER_URI=https://api.openweathermap.org/data/2.5/weather
-FORECAST_WEATHER_URI=https://api.openweathermap.org/data/2.5/forecast
- 
-#  FLASK 
-FLASK_SECRET_KEY=your_random_secret_key
-FLASK_ENV=development          # set to "production" on EC2
- 
-# AI CHATBOT 
-GEMINI_API_KEY=your_gemini_api_key
-GROQ_API_KEY=your_groq_api_key
+
+## Project structure
+
 ```
- 
-| Variable | Description |
-|---|---|
-| `DB_USER` / `DB_PASSWORD` | MySQL credentials |
-| `DB_HOST` / `DB_PORT` | MySQL host (use `127.0.0.1` locally) |
-| `DB_NAME_JCDECAUX` | Database storing station data |
-| `DB_NAME_WEATHER` | Database storing weather data |
-| `JCDECAUX_API_KEY` | From [developer.jcdecaux.com](https://developer.jcdecaux.com) |
-| `OPENWEATHER_API_KEY` | From [openweathermap.org](https://openweathermap.org/api) |
-| `GOOGLE_MAPS_API_KEY` | From [Google Cloud Console](https://console.cloud.google.com) |
-| `FLASK_SECRET_KEY` | Any long random string for session signing |
-| `GEMINI_API_KEY` | Powers the Gemini AI chatbot |
-| `GROQ_API_KEY` | Powers the Grok AI chatbot |
-| `CORS_ORIGINS` | Restrict API CORS origins (defaults to `*`) |
- 
----
- 
-## Setup & Installation
- 
-### Prerequisites
- 
-- Python 3.10+
-- MySQL 8+
-- Git
-### 1. Clone the repository
- 
+├── app.py                     # Entry point: create_app() + CORS for /api/*
+├── main_project/
+│   ├── __init__.py            # App factory, blueprint registration
+│   ├── config.py              # Config loaded from .env / var.env
+│   ├── db.py                  # SQLAlchemy engines
+│   ├── auth/  home/  station/  weather/  journey/  chat/
+│   ├── bike_forecast/         # Forecast routes + model loading/prediction
+│   ├── notebooks/             # Model training notebooks
+│   ├── templates/  static/    # Jinja2 pages, JS, CSS, icons
+│   └── bash_scripts/          # DB creation and scraper helpers
+├── sprint1_webscrappers/      # JCDecaux / OpenWeather scrapers (webscrapping_ec2/ runs in production)
+├── sprint2_flask_cd/          # Sprint 2 Flask prototype
+├── sprint3_frontend_react_wjl/# Sprint 3 React prototype
+├── deploy/                    # schema.sql, systemd units, nginx config
+├── test.py                    # Unit tests
+└── Gen AI Logs/               # Per-member AI usage logs
+```
+
+## Getting started
+
+**Prerequisites:** Python 3.10+, MySQL 8+.
+
 ```bash
-git clone https://github.com/shayan-ashish-chakraborty/dublin-bikes-team20.git
-cd dublin-bikes-team20
-```
- 
-### 2. Create and activate a virtual environment
- 
-```bash
-# Using venv
-python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
- 
-# Or using Conda
-conda env create -f environment_conda.yml
-conda activate dublin-bikes
-```
- 
-### 3. Install dependencies
- 
-```bash
+git clone https://github.com/seanchoy/dublin-bikes.git
+cd dublin-bikes
+python -m venv venv && source venv/bin/activate
 pip install -r requirement.txt
 ```
- 
-### 4. Configure environment variables
- 
+
+Configure environment variables (see [`.env.example`](.env.example) for the full list):
+
 ```bash
-cp main_project/var.env.example main_project/var.env
-# Edit main_project/var.env and fill in your credentials
+cp .env.example .env
 ```
- 
-### 5. Initialise the databases
- 
+
+Create the databases and tables:
+
 ```bash
-# Create MySQL databases
-bash main_project/bash_scripts/create_db.sh
- 
-# Create the auth (users) database
-python main_project/auth/create_auth_db.py
+mysql -u root -p < deploy/schema.sql
 ```
- 
----
- 
-## Running the App
- 
+
+Run the app (defaults to `http://0.0.0.0:8000`; override with `HOST` / `PORT`):
+
 ```bash
-# From the project root
 python app.py
 ```
- 
-The app will start on `http://0.0.0.0:8000` by default. You can override the host and port:
- 
+
+The trained forecast models (`main_project/bike_forecast/models/*.pkl`, ~2 GB) are not in the repo. Generate them with the notebooks in `main_project/notebooks/`; the rest of the app runs without them.
+
+## Tests
+
 ```bash
-HOST=127.0.0.1 PORT=5000 python app.py
+python -m unittest test.py -v
 ```
- 
+
+## Deployment
+
+Production runs on EC2 with the app in `/srv/dublin-bikes`:
+
+- `deploy/dublin-bikes.service`: gunicorn, 1 worker × 8 threads (each worker loads the forecast models).
+- `deploy/dublin-bikes-scraper@.service`: one instance per scraper, e.g. `dublin-bikes-scraper@jcdecaux`.
+- `deploy/nginx.conf`: TLS termination, static files, reverse proxy to gunicorn.
+- `deploy/schema.sql`: station, availability, weather and users tables on RDS.
+
+## Links
+
+- [Figma mockup](https://www.figma.com/design/hTWVkDQys1NVg8Z7n2yyXK/Software-Engineering?node-id=0-1&p=f&t=4nAaHxQFGe30qwF2-0)
+- [Personas, interviews, PRD and backlog](https://drive.google.com/drive/folders/1maMOySvNugMCGIAmODOntPJsiAVLn2Hl?usp=sharing)
+- [Sphinx API docs](https://shayan-ashish-chakraborty.github.io/dublin-bikes-team20/)
+
 ---
- 
-## Team Logs
- 
-Individual development logs are stored per-member under the `Logs/` directory:
- 
-- `Logs/Jialin/`
-- `Logs/Leah/`
-- `Logs/Sean/`
-- `Logs/Shayan/`
----
- 
-##  License
- 
-This project was developed as part of the UCD Software Engineering module. All rights reserved by Team 20.
+
+<sub>Built as a Team 20 group project for the Software Engineering module at University College Dublin. Team: Jialin, Leah, Shayan, Shida. Original team repo: <a href="https://github.com/shayan-ashish-chakraborty/dublin-bikes-team20">shayan-ashish-chakraborty/dublin-bikes-team20</a>.</sub>
